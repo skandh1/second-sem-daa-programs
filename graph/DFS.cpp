@@ -1,63 +1,44 @@
-// C++ program to print DFS traversal from
-// a given vertex in a given graph
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+
 using namespace std;
 
-// Graph class represents a directed graph
-// using adjacency list representation
-class Graph {
-public:
-	map<int, bool> visited;
-	map<int, list<int> > adj;
+// Function to perform DFS on a graph
+void DFS(int node, const vector<vector<int>>& adjList, vector<bool>& visited) {
+    // Mark the current node as visited
+    visited[node] = true;
+    cout << "Visited node: " << node << endl;
 
-	// Function to add an edge to graph
-	void addEdge(int v, int w);
-
-	// DFS traversal of the vertices
-	// reachable from v
-	void DFS(int v);
-};
-
-void Graph::addEdge(int v, int w)
-{
-	// Add w to v’s list.
-	adj[v].push_back(w);
+    // Visit all the adjacent nodes
+    for (int neighbor : adjList[node]) {
+        if (!visited[neighbor]) {
+            DFS(neighbor, adjList, visited);
+        }
+    }
 }
 
-void Graph::DFS(int v)
-{
-	// Mark the current node as visited and
-	// print it
-	visited[v] = true;
-	cout << v << " ";
+int main() {
+    // Number of nodes in the graph
+    int numNodes = 5;
 
-	// Recur for all the vertices adjacent
-	// to this vertex
-	list<int>::iterator i;
-	for (i = adj[v].begin(); i != adj[v].end(); ++i)
-		if (!visited[*i])
-			DFS(*i);
+    // Adjacency list representation of the graph
+    vector<vector<int>> adjList(numNodes);
+
+    // Adding edges to the graph (undirected for this example)
+    adjList[0].push_back(1);
+    adjList[0].push_back(2);
+    adjList[1].push_back(0);
+    adjList[1].push_back(3);
+    adjList[2].push_back(0);
+    adjList[2].push_back(4);
+    adjList[3].push_back(1);
+    adjList[4].push_back(2);
+
+    // Vector to keep track of visited nodes
+    vector<bool> visited(numNodes, false);
+
+    // Start DFS from node 0
+    DFS(0, adjList, visited);
+
+    return 0;
 }
-
-// Driver code
-int main()
-{
-	// Create a graph given in the above diagram
-	Graph g;
-	g.addEdge(0, 1);
-	g.addEdge(0, 2);
-	g.addEdge(1, 2);
-	g.addEdge(2, 0);
-	g.addEdge(2, 3);
-	g.addEdge(3, 3);
-
-	cout << "Following is Depth First Traversal"
-			" (starting from vertex 2) \n";
-
-	// Function call
-	g.DFS(2);
-
-	return 0;
-}
-
-// improved by Vishnudev C

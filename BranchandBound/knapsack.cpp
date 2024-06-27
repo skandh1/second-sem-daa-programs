@@ -1,157 +1,102 @@
-// C++ program to solve knapsack problem using
-// branch and bound
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
 using namespace std;
 
-// Structure for Item which store weight and corresponding
-// value of Item
-struct Item
-{
-	float weight;
-	int value;
+// Structure to represent items
+struct Item {
+    int weight;
+    int value;
 };
 
-// Node structure to store information of decision
-// tree
-struct Node
-{
-	// level --> Level of node in decision tree (or index
-	//			 in arr[]
-	// profit --> Profit of nodes on path from root to this
-	//		 node (including this node)
-	// bound ---> Upper bound of maximum profit in subtree
-	//		 of this node/
-	int level, profit, bound;
-	float weight;
-};
-
-// Comparison function to sort Item according to
-// val/weight ratio
-bool cmp(Item a, Item b)
-{
-	double r1 = (double)a.value / a.weight;
-	double r2 = (double)b.value / b.weight;
-	return r1 > r2;
+// Function to compare items by their value per unit weight (value/weight ratio)
+bool compareItems(const Item& a, const Item& b) {
+    double ratioA = (double)a.value / a.weight;
+    double ratioB = (double)b.value / b.weight;
+    return ratioA > ratioB;
 }
 
-// Returns bound of profit in subtree rooted with u.
-// This function mainly uses Greedy solution to find
-// an upper bound on maximum profit.
-int bound(Node u, int n, int W, Item arr[])
-{
-	// if weight overcomes the knapsack capacity, return
-	// 0 as expected bound
-	if (u.weight >= W)
-		return 0;
+// Function to solve 0/1 Knapsack using Branch and Bound
+int knapsackBranchBound(int capacity, const vector<Item>& items, int n) {
+    // Sort items by value/weight ratio (decreasing order)
+    vector<Item> sortedItems = items;
+    sort(sortedItems.begin(), sortedItems.end(), compareItems);
 
-	// initialize bound on profit by current profit
-	int profit_bound = u.profit;
+    int maxProfit = 0;
+    int currentWeight = 0;
+    int currentProfit = 0;
 
-	// start including items from index 1 more to current
-	// item index
-	int j = u.level + 1;
-	int totweight = u.weight;
+    // Function to compute upper bound using fractional knapsack approach
+    auto computeBound = [&](int level, int weight, int profit) -> int {
+        if (weight >= capacity) return profit;
 
-	// checking index condition and knapsack capacity
-	// condition
-	while ((j < n) && (totweight + arr[j].weight <= W))
-	{
-		totweight += arr[j].weight;
-		profit_bound += arr[j].value;
-		j++;
-	}
+        int bound = profit;
+        int remainingWeight = capacity - weight;
 
-	// If k is not n, include last item partially for
-	// upper bound on profit
-	if (j < n)
-		profit_bound += (W - totweight) * arr[j].value /
-										arr[j].weight;
+        // Add fractional part of next item to the bound
+        for (int i = level; i < n; ++i) {
+            if (sortedItems[i].weight <= remainingWeight) {
+                remainingWeight -= sortedItems[i].weight;
+                bound += sortedItems[i].value;
+            } else {
+                bound += sortedItems[i].value * ((double)remainingWeight / sortedItems[i].weight);
+                break;
+            }
+        }
 
-	return profit_bound;
+        return bound;
+    };
+
+    // Initialize priority queue for branch and bound
+    vector<pair<int, int>> pq; // pair of (bound, level)
+    pq.push_back({0, 0});
+
+    while (!pq.empty()) {
+        int bound = pq.back().first;
+        int level = pq.back().second;
+        pq.pop_back();
+
+        // If current bound is less than maxProfit, prune the subtree
+        if (bound <= maxProfit) continue;
+
+        // If we reached the end of the items list, update maxProfit if possible
+        if (level == n) {
+            maxProfit = max(maxProfit, currentProfit);
+            continue;
+        }
+
+        // Consider the next level (left child) - item is included in knapsack
+        if (currentWeight + sortedItems[level].weight <= capacity) {
+            currentWeight += sortedItems[level].weight;
+            currentProfit += sortedItems[level].value;
+
+            // Update bound and push to priority queue
+            bound = computeBound(level + 1, currentWeight, currentProfit);
+            pq.push_back({bound, level + 1});
+
+            // Backtrack
+            currentWeight -= sortedItems[level].weight;
+            currentProfit -= sortedItems[level].value;
+        }
+
+        // Consider the next level (right child) - item is not included in knapsack
+        bound = computeBound(level + 1, currentWeight, currentProfit);
+        pq.push_back({bound, level + 1});
+    }
+
+    return maxProfit;
 }
 
-// Returns maximum profit we can get with capacity W
-int knapsack(int W, Item arr[], int n)
-{
-	// sorting Item on basis of value per unit
-	// weight.
-	sort(arr, arr + n, cmp);
+// Example usage
+int main() {
+    vector<Item> items = {{2, 40}, {3, 50}, {5, 100}, {7, 95}};
+    int capacity = 10;
+    int n = items.size();
 
-	// make a queue for traversing the node
-	queue<Node> Q;
-	Node u, v;
+    int maxProfit = knapsackBranchBound(capacity, items, n);
 
-	// dummy node at starting
-	u.level = -1;
-	u.profit = u.weight = 0;
-	Q.push(u);
+    cout << "Maximum profit (using Branch and Bound): " << maxProfit << endl;
 
-	// One by one extract an item from decision tree
-	// compute profit of all children of extracted item
-	// and keep saving maxProfit
-	int maxProfit = 0;
-	while (!Q.empty())
-	{
-		// Dequeue a node
-		u = Q.front();
-		Q.pop();
-
-		// If it is starting node, assign level 0
-		if (u.level == -1)
-			v.level = 0;
-
-		// If there is nothing on next level
-		if (u.level == n-1)
-			continue;
-
-		// Else if not last node, then increment level,
-		// and compute profit of children nodes.
-		v.level = u.level + 1;
-
-		// Taking current level's item add current
-		// level's weight and value to node u's
-		// weight and value
-		v.weight = u.weight + arr[v.level].weight;
-		v.profit = u.profit + arr[v.level].value;
-
-		// If cumulated weight is less than W and
-		// profit is greater than previous profit,
-		// update maxprofit
-		if (v.weight <= W && v.profit > maxProfit)
-			maxProfit = v.profit;
-
-		// Get the upper bound on profit to decide
-		// whether to add v to Q or not.
-		v.bound = bound(v, n, W, arr);
-
-		// If bound value is greater than profit,
-		// then only push into queue for further
-		// consideration
-		if (v.bound > maxProfit)
-			Q.push(v);
-
-		// Do the same thing, but Without taking
-		// the item in knapsack
-		v.weight = u.weight;
-		v.profit = u.profit;
-		v.bound = bound(v, n, W, arr);
-		if (v.bound > maxProfit)
-			Q.push(v);
-	}
-
-	return maxProfit;
-}
-
-// driver program to test above function
-int main()
-{
-	int W = 10; // Weight of knapsack
-	Item arr[] = {{2, 40}, {3.14, 50}, {1.98, 100},
-				{5, 95}, {3, 30}};
-	int n = sizeof(arr) / sizeof(arr[0]);
-
-	cout << "Maximum possible profit = "
-		<< knapsack(W, arr, n);
-
-	return 0;
+    return 0;
 }

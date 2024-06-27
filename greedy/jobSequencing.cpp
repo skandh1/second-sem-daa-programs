@@ -1,73 +1,75 @@
-// C++ code for the above approach
-
-#include <algorithm>
 #include <iostream>
+#include <algorithm>
+#include <vector>
+
 using namespace std;
 
-// A structure to represent a job
+// Structure to represent a job
 struct Job {
-
-	char id; // Job Id
-	int dead; // Deadline of job
-	int profit; // Profit if job is over before or on
-				// deadline
+    char id;      // Job ID
+    int deadline; // Deadline of the job
+    int profit;   // Profit of the job
 };
 
-// Comparator function for sorting jobs
-bool comparison(Job a, Job b)
-{
-	return (a.profit > b.profit);
+// Function to compare jobs based on profit (used for sorting)
+bool compareJobs(Job a, Job b) {
+    return (a.profit > b.profit);
 }
 
-// Returns maximum profit from jobs
-void printJobScheduling(Job arr[], int n)
-{
-	// Sort all jobs according to decreasing order of profit
-	sort(arr, arr + n, comparison);
+// Function to schedule jobs with deadlines using greedy approach
+void jobSequencing(Job jobs[], int n) {
+    // Sort jobs based on profit (in descending order)
+    sort(jobs, jobs + n, compareJobs);
 
-	int result[n]; // To store result (Sequence of jobs)
-	bool slot[n]; // To keep track of free time slots
+    // Find maximum deadline
+    int maxDeadline = 0;
+    for (int i = 0; i < n; ++i) {
+        if (jobs[i].deadline > maxDeadline) {
+            maxDeadline = jobs[i].deadline;
+        }
+    }
 
-	// Initialize all slots to be free
-	for (int i = 0; i < n; i++)
-		slot[i] = false;
+    // Array to store result (scheduled jobs)
+    char result[maxDeadline] = {0};
 
-	// Iterate through all given jobs
-	for (int i = 0; i < n; i++) {
-		// Find a free slot for this job (Note that we start
-		// from the last possible slot)
-		for (int j = min(n, arr[i].dead) - 1; j >= 0; j--) {
-			// Free slot found
-			if (slot[j] == false) {
-				result[j] = i; // Add this job to result
-				slot[j] = true; // Make this slot occupied
-				break;
-			}
-		}
-	}
+    // Schedule jobs
+    int totalProfit = 0;
+    for (int i = 0; i < n; ++i) {
+        // Find a slot for this job (from end to beginning)
+        for (int j = jobs[i].deadline - 1; j >= 0; --j) {
+            if (result[j] == 0) { // Slot is available
+                result[j] = jobs[i].id;
+                totalProfit += jobs[i].profit;
+                break;
+            }
+        }
+    }
 
-	// Print the result
-	for (int i = 0; i < n; i++)
-		if (slot[i])
-			cout << arr[result[i]].id << " ";
+    // Print the scheduled jobs and total profit
+    cout << "Scheduled jobs with deadlines using greedy approach:" << endl;
+    for (int i = 0; i < maxDeadline; ++i) {
+        if (result[i] != 0) {
+            cout << result[i] << " ";
+        }
+    }
+    cout << endl;
+    cout << "Total profit: " << totalProfit << endl;
 }
 
-// Driver's code
-int main()
-{
-	Job arr[] = { { 'a', 2, 100 },
-				{ 'b', 1, 19 },
-				{ 'c', 2, 27 },
-				{ 'd', 1, 25 },
-				{ 'e', 3, 15 } };
+// Main function
+int main() {
+    // Example jobs
+    Job jobs[] = {
+        {'a', 2, 100},
+        {'b', 1, 19},
+        {'c', 2, 27},
+        {'d', 1, 25},
+        {'e', 3, 15}
+    };
+    int n = sizeof(jobs) / sizeof(jobs[0]);
 
-	int n = sizeof(arr) / sizeof(arr[0]);
-	cout << "Following is maximum profit sequence of jobs "
-			"\n";
+    // Call function to schedule jobs
+    jobSequencing(jobs, n);
 
-	// Function call
-	printJobScheduling(arr, n);
-	return 0;
+    return 0;
 }
-
-// This code is contributed by Aditya Kumar (adityakumar129)

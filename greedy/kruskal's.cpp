@@ -1,110 +1,99 @@
-// C++ program for the above approach 
+#include <iostream>
+#include <vector>
+#include <algorithm>
 
-#include <bits/stdc++.h> 
-using namespace std; 
+using namespace std;
 
-// DSU data structure 
-// path compression + rank by union 
-class DSU { 
-	int* parent; 
-	int* rank; 
+// Structure to represent an edge in the graph
+struct Edge {
+    int src, dest, weight;
+};
 
-public: 
-	DSU(int n) 
-	{ 
-		parent = new int[n]; 
-		rank = new int[n]; 
+// Structure to represent a subset for union-find
+struct Subset {
+    int parent;
+    int rank;
+};
 
-		for (int i = 0; i < n; i++) { 
-			parent[i] = -1; 
-			rank[i] = 1; 
-		} 
-	} 
+// Find function for union-find with path compression
+int find(vector<Subset>& subsets, int i) {
+    if (subsets[i].parent != i) {
+        subsets[i].parent = find(subsets, subsets[i].parent); // Path compression
+    }
+    return subsets[i].parent;
+}
 
-	// Find function 
-	int find(int i) 
-	{ 
-		if (parent[i] == -1) 
-			return i; 
+// Union function for union-find by rank
+void unionSet(vector<Subset>& subsets, int x, int y) {
+    int rootX = find(subsets, x);
+    int rootY = find(subsets, y);
 
-		return parent[i] = find(parent[i]); 
-	} 
+    // Union by rank
+    if (subsets[rootX].rank < subsets[rootY].rank) {
+        subsets[rootX].parent = rootY;
+    } else if (subsets[rootX].rank > subsets[rootY].rank) {
+        subsets[rootY].parent = rootX;
+    } else {
+        subsets[rootY].parent = rootX;
+        subsets[rootX].rank++;
+    }
+}
 
-	// Union function 
-	void unite(int x, int y) 
-	{ 
-		int s1 = find(x); 
-		int s2 = find(y); 
+// Kruskal's algorithm to find MST
+void kruskalMST(vector<Edge>& edges, int V) {
+    // Sort all the edges in non-decreasing order of their weight
+    sort(edges.begin(), edges.end(), [](const Edge& a, const Edge& b) {
+        return a.weight < b.weight;
+    });
 
-		if (s1 != s2) { 
-			if (rank[s1] < rank[s2]) { 
-				parent[s1] = s2; 
-			} 
-			else if (rank[s1] > rank[s2]) { 
-				parent[s2] = s1; 
-			} 
-			else { 
-				parent[s2] = s1; 
-				rank[s1] += 1; 
-			} 
-		} 
-	} 
-}; 
+    vector<Edge> result; // To store the resultant MST
+    vector<Subset> subsets(V);
 
-class Graph { 
-	vector<vector<int> > edgelist; 
-	int V; 
+    // Initialize subsets for union-find
+    for (int v = 0; v < V; ++v) {
+        subsets[v].parent = v;
+        subsets[v].rank = 0;
+    }
 
-public: 
-	Graph(int V) { this->V = V; } 
+    int e = 0; // Index variable used for sorted edges
+    int i = 0; // Index variable used for result[]
 
-	// Function to add edge in a graph 
-	void addEdge(int x, int y, int w) 
-	{ 
-		edgelist.push_back({ w, x, y }); 
-	} 
+    // Number of edges to be taken is equal to V-1
+    while (i < V - 1 && e < edges.size()) {
+        // Pick the smallest edge. Check if it forms a cycle with the spanning tree formed so far
+        Edge nextEdge = edges[e++];
 
-	void kruskals_mst() 
-	{ 
-		// Sort all edges 
-		sort(edgelist.begin(), edgelist.end()); 
+        int x = find(subsets, nextEdge.src);
+        int y = find(subsets, nextEdge.dest);
 
-		// Initialize the DSU 
-		DSU s(V); 
-		int ans = 0; 
-		cout << "Following are the edges in the "
-				"constructed MST"
-			<< endl; 
-		for (auto edge : edgelist) { 
-			int w = edge[0]; 
-			int x = edge[1]; 
-			int y = edge[2]; 
+        // If including this edge does not cause a cycle, include it in the result and increment the index of result for next edge
+        if (x != y) {
+            result.push_back(nextEdge);
+            unionSet(subsets, x, y);
+            ++i;
+        }
+        // Otherwise, discard the edge
+    }
 
-			// Take this edge in MST if it does 
-			// not forms a cycle 
-			if (s.find(x) != s.find(y)) { 
-				s.unite(x, y); 
-				ans += w; 
-				cout << x << " -- " << y << " == " << w 
-					<< endl; 
-			} 
-		} 
-		cout << "Minimum Cost Spanning Tree: " << ans; 
-	} 
-}; 
+    // Print the edges of MST
+    cout << "Edges of Minimum Spanning Tree using Kruskal's algorithm:\n";
+    for (const auto& edge : result) {
+        cout << edge.src << " - " << edge.dest << " : " << edge.weight << endl;
+    }
+}
 
-// Driver code 
-int main() 
-{ 
-	Graph g(4); 
-	g.addEdge(0, 1, 10); 
-	g.addEdge(1, 3, 15); 
-	g.addEdge(2, 3, 4); 
-	g.addEdge(2, 0, 6); 
-	g.addEdge(0, 3, 5); 
+// Example usage
+int main() {
+    int V = 4; // Number of vertices in graph
+    vector<Edge> edges = {
+        {0, 1, 10},
+        {0, 2, 6},
+        {0, 3, 5},
+        {1, 3, 15},
+        {2, 3, 4}
+    };
 
-	// Function call 
-	g.kruskals_mst(); 
+    kruskalMST(edges, V);
 
-	return 0; 
+    return 0;
 }

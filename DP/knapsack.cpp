@@ -1,36 +1,35 @@
-// C++ program for the above approach
+#include <iostream>
+#include <vector>
+#include <algorithm>
 
-#include <bits/stdc++.h>
-using namespace std;
-
-// Function to find the maximum profit
-int knapSack(int W, int wt[], int val[], int n)
-{
-    // Making and initializing dp array
-    int dp[W + 1];
-    memset(dp, 0, sizeof(dp));
-
-    for (int i = 1; i < n + 1; i++) {
-        for (int w = W; w >= 0; w--) {
-
-            if (wt[i - 1] <= w)
-                
-                // Finding the maximum value
-                dp[w] = max(dp[w],
-                            dp[w - wt[i - 1]] + val[i - 1]);
-        }
+// Function to solve 0/1 Knapsack problem using recursion
+int knapsack(int W, const std::vector<int>& weights, const std::vector<int>& values, int n) {
+    // Base Case: If no items are left or capacity is 0
+    if (n == 0 || W == 0) {
+        return 0;
     }
-    // Returning the maximum value of knapsack
-    return dp[W];
+
+    // If weight of the nth item is more than Knapsack capacity W, then this item cannot be included
+    if (weights[n-1] > W) {
+        return knapsack(W, weights, values, n-1);
+    } else {
+        // Return the maximum of two cases:
+        // 1. nth item included
+        // 2. not included
+        return std::max(
+            values[n-1] + knapsack(W - weights[n-1], weights, values, n-1),
+            knapsack(W, weights, values, n-1)
+        );
+    }
 }
 
-// Driver code
-int main()
-{
-    int profit[] = { 60, 100, 120 };
-    int weight[] = { 10, 20, 30 };
+int main() {
+    std::vector<int> values = {60, 100, 120};
+    std::vector<int> weights = {10, 20, 30};
     int W = 50;
-    int n = sizeof(profit) / sizeof(profit[0]);
-    cout << knapSack(W, weight, profit, n);
+    int n = values.size();
+
+    std::cout << "Maximum value in Knapsack: " << knapsack(W, weights, values, n) << std::endl;
+
     return 0;
 }

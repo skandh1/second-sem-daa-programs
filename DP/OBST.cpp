@@ -1,74 +1,53 @@
-// Dynamic Programming code for Optimal Binary Search 
-// Tree Problem 
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <limits>
+
 using namespace std;
 
-// A utility function to get sum of array elements 
-// freq[i] to freq[j] 
-int sum(int freq[], int i, int j); 
+// Function to find the optimal binary search tree cost
+float optimalBSTCost(const vector<float>& keys, const vector<float>& freq) {
+    int n = keys.size();
+    vector<vector<float>> cost(n, vector<float>(n, 0));
 
-/* A Dynamic Programming based function that calculates 
-minimum cost of a Binary Search Tree. */
-int optimalSearchTree(int keys[], int freq[], int n) 
-{ 
-	/* Create an auxiliary 2D matrix to store results 
-	of subproblems */
-	int cost[n][n]; 
+    // Base case: single node trees
+    for (int i = 0; i < n; ++i) {
+        cost[i][i] = freq[i];
+    }
 
-	/* cost[i][j] = Optimal cost of binary search tree 
-	that can be formed from keys[i] to keys[j]. 
-	cost[0][n-1] will store the resultant cost */
+    // Build the cost table in a bottom-up manner
+    for (int L = 2; L <= n; ++L) {  // L is chain length
+        for (int i = 0; i <= n - L + 1; ++i) {
+            int j = i + L - 1;
+            cost[i][j] = numeric_limits<float>::infinity();
+            float sum = 0;
 
-	// For a single key, cost is equal to frequency of the key 
-	for (int i = 0; i < n; i++) 
-		cost[i][i] = freq[i]; 
+            // Calculate sum of freq[i] to freq[j]
+            for (int k = i; k <= j; ++k) {
+                sum += freq[k];
+            }
 
-	// Now we need to consider chains of length 2, 3, ... . 
-	// L is chain length. 
-	for (int L = 2; L <= n; L++) 
-	{ 
-		// i is row number in cost[][] 
-		for (int i = 0; i <= n-L+1; i++) 
-		{ 
-			// Get column number j from row number i and 
-			// chain length L 
-			int j = i+L-1; 
-			cost[i][j] = INT_MAX;
-			int off_set_sum = sum(freq, i, j);
+            // Try making all keys in interval keys[i..j] as root
+            for (int k = i; k <= j; ++k) {
+                float val = ((k > i) ? cost[i][k - 1] : 0) +
+                            ((k < j) ? cost[k + 1][j] : 0) + sum;
+                if (val < cost[i][j]) {
+                    cost[i][j] = val;
+                }
+            }
+        }
+    }
 
-			// Try making all keys in interval keys[i..j] as root 
-			for (int r = i; r <= j; r++) 
-			{ 
-			// c = cost when keys[r] becomes root of this subtree 
-			int c = ((r > i)? cost[i][r-1]:0) + 
-					((r < j)? cost[r+1][j]:0) + 
-					off_set_sum;
-			if (c < cost[i][j]) 
-				cost[i][j] = c; 
-			} 
-		} 
-	} 
-	return cost[0][n-1]; 
-} 
+    // Return the optimal cost of BST
+    return cost[0][n - 1];
+}
 
-// A utility function to get sum of array elements 
-// freq[i] to freq[j] 
-int sum(int freq[], int i, int j) 
-{ 
-	int s = 0; 
-	for (int k = i; k <= j; k++) 
-	s += freq[k]; 
-	return s; 
-} 
+int main() {
+    vector<float> keys = {10, 12, 20};
+    vector<float> freq = {4, 2, 6};
 
-// Driver code 
-int main() 
-{ 
-	int keys[] = {10, 12, 20}; 
-	int freq[] = {34, 8, 50}; 
-	int n = sizeof(keys)/sizeof(keys[0]); 
-	cout << "Cost of Optimal BST is " << optimalSearchTree(keys, freq, n); 
-	return 0; 
-} 
+    float minCost = optimalBSTCost(keys, freq);
 
-// This code is contributed by rathbhupendra
+    cout << "The cost of optimal BST is: " << minCost << endl;
+
+    return 0;
+}

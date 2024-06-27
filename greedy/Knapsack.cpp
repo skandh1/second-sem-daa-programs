@@ -1,70 +1,50 @@
-// C++ program to solve fractional Knapsack Problem
+#include <iostream>
+#include <vector>
+#include <algorithm>
 
-#include <bits/stdc++.h>
 using namespace std;
 
-// Structure for an item which stores weight and
-// corresponding value of Item
 struct Item {
-	int profit, weight;
-
-	// Constructor
-	Item(int profit, int weight)
-	{
-		this->profit = profit;
-		this->weight = weight;
-	}
+    int value;
+    int weight;
+    double ratio;
 };
 
-// Comparison function to sort Item 
-// according to profit/weight ratio
-static bool cmp(struct Item a, struct Item b)
-{
-	double r1 = (double)a.profit / (double)a.weight;
-	double r2 = (double)b.profit / (double)b.weight;
-	return r1 > r2;
+bool cmpRatio(Item a, Item b) {
+    return a.ratio > b.ratio;
 }
 
-// Main greedy function to solve problem
-double fractionalKnapsack(int W, struct Item arr[], int N)
-{
-	// Sorting Item on basis of ratio
-	sort(arr, arr + N, cmp);
+int main() {
+    int n, capacity;
+    cout << "Enter the number of items: ";
+    cin >> n;
+    cout << "Enter the capacity of the knapsack: ";
+    cin >> capacity;
 
-	double finalvalue = 0.0;
+    vector<Item> items(n);
 
-	// Looping through all items
-	for (int i = 0; i < N; i++) {
-		
-		// If adding Item won't overflow, 
-		// add it completely
-		if (arr[i].weight <= W) {
-			W -= arr[i].weight;
-			finalvalue += arr[i].profit;
-		}
+    cout << "Enter the value and weight of each item:\n";
+    for (int i = 0; i < n; i++) {
+        cin >> items[i].value >> items[i].weight;
+        items[i].ratio = (double)items[i].value / items[i].weight;
+    }
 
-		// If we can't add current Item, 
-		// add fractional part of it
-		else {
-			finalvalue
-				+= arr[i].profit
-				* ((double)W / (double)arr[i].weight);
-			break;
-		}
-	}
+    sort(items.begin(), items.end(), cmpRatio);
 
-	// Returning final value
-	return finalvalue;
-}
+    int totalValue = 0;
+    double totalWeight = 0.0;
 
-// Driver code
-int main()
-{
-	int W = 50;
-	Item arr[] = { { 60, 10 }, { 100, 20 }, { 120, 30 } };
-	int N = sizeof(arr) / sizeof(arr[0]);
+    for (int i = 0; i < n; i++) {
+        if (totalWeight + items[i].weight <= capacity) {
+            totalValue += items[i].value;
+            totalWeight += items[i].weight;
+        } else {
+            break;
+        }
+    }
 
-	// Function call
-	cout << fractionalKnapsack(W, arr, N);
-	return 0;
+    cout << "Maximum value that can be put in the knapsack: " << totalValue << endl;
+    cout << "Total weight in the knapsack: " << totalWeight << endl;
+
+    return 0;
 }

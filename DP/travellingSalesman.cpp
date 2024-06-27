@@ -1,64 +1,55 @@
 #include <iostream>
+#include <vector>
+#include <algorithm>
+#include <limits.h>
 
-using namespace std;
+const int INF = INT_MAX;
 
-// there are four nodes in example graph (graph is 1-based)
-const int n = 4;
-// give appropriate maximum to avoid overflow
-const int MAX = 1000000;
+// Function to solve the Travelling Salesman Problem using DP and bit masking
+int tsp(int mask, int pos, std::vector<std::vector<int>>& dist, std::vector<std::vector<int>>& dp) {
+    int n = dist.size();
 
-// dist[i][j] represents shortest distance to go from i to j
-// this matrix can be calculated for any given graph using
-// all-pair shortest path algorithms
-int dist[n + 1][n + 1] = {
-	{ 0, 0, 0, 0, 0 }, { 0, 0, 10, 15, 20 },
-	{ 0, 10, 0, 25, 25 }, { 0, 15, 25, 0, 30 },
-	{ 0, 20, 25, 30, 0 },
-};
+    // If all cities have been visited, return the distance to the start city
+    if (mask == (1 << n) - 1) {
+        return dist[pos][0];
+    }
 
-// memoization for top down recursion
-int memo[n + 1][1 << (n + 1)];
+    // If the subproblem has already been solved, return the stored result
+    if (dp[mask][pos] != -1) {
+        return dp[mask][pos];
+    }
 
-int fun(int i, int mask)
-{
-	// base case
-	// if only ith bit and 1st bit is set in our mask,
-	// it implies we have visited all other nodes already
-	if (mask == ((1 << i) | 3))
-		return dist[1][i];
-	// memoization
-	if (memo[i][mask] != 0)
-		return memo[i][mask];
+    int ans = INF;
 
-	int res = MAX; // result of this sub-problem
+    // Try to visit all the unvisited cities and find the minimum cost
+    for (int city = 0; city < n; city++) {
+        if ((mask & (1 << city)) == 0) { // If the city has not been visited
+            int newAns = dist[pos][city] + tsp(mask | (1 << city), city, dist, dp);
+            ans = std::min(ans, newAns);
+        }
+    }
 
-	// we have to travel all nodes j in mask and end the
-	// path at ith node so for every node j in mask,
-	// recursively calculate cost of travelling all nodes in
-	// mask except i and then travel back from node j to
-	// node i taking the shortest path take the minimum of
-	// all possible j nodes
-
-	for (int j = 1; j <= n; j++)
-		if ((mask & (1 << j)) && j != i && j != 1)
-			res = std::min(res, fun(j, mask & (~(1 << i)))
-									+ dist[j][i]);
-	return memo[i][mask] = res;
-}
-// Driver program to test above logic
-int main()
-{
-	int ans = MAX;
-	for (int i = 1; i <= n; i++)
-		// try to go from node 1 visiting all nodes in
-		// between to i then return from i taking the
-		// shortest route to 1
-		ans = std::min(ans, fun(i, (1 << (n + 1)) - 1)
-								+ dist[i][1]);
-
-	printf("The cost of most efficient tour = %d", ans);
-
-	return 0;
+    // Store the result and return it
+    return dp[mask][pos] = ans;
 }
 
-// This code is contributed by Serjeel Ranjan
+int main() {
+    // Adjacency matrix for the distances between cities
+    std::vector<std::vector<int>> dist = {
+        {0, 20, 42, 25},
+        {20, 0, 30, 34},
+        {42, 30, 0, 10},
+        {25, 34, 10, 0}
+    };
+
+    int n = dist.size();
+    // DP table to store the results of subproblems
+    std::vector<std::vector<int>> dp(1 << n, std::vector<int>(n, -1));
+
+    // Start the TSP from the first city with a mask indicating only the first city is visited
+    int result = tsp(1, 0, dist, dp);
+
+    std::cout << "The minimum cost to visit all cities: " << result << std::endl;
+
+    return 0;
+}
