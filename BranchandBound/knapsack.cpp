@@ -5,20 +5,23 @@
 using namespace std;
 
 // Structure to represent items
-struct Item {
+struct Item
+{
     int weight;
     int value;
 };
 
 // Function to compare items by their value per unit weight (value/weight ratio)
-bool compareItems(const Item& a, const Item& b) {
+bool compareItems(const Item &a, const Item &b)
+{
     double ratioA = (double)a.value / a.weight;
     double ratioB = (double)b.value / b.weight;
     return ratioA > ratioB;
 }
 
 // Function to solve 0/1 Knapsack using Branch and Bound
-int knapsackBranchBound(int capacity, const vector<Item>& items, int n) {
+int knapsackBranchBound(int capacity, const vector<Item> &items, int n)
+{
     // Sort items by value/weight ratio (decreasing order)
     vector<Item> sortedItems = items;
     sort(sortedItems.begin(), sortedItems.end(), compareItems);
@@ -28,18 +31,24 @@ int knapsackBranchBound(int capacity, const vector<Item>& items, int n) {
     int currentProfit = 0;
 
     // Function to compute upper bound using fractional knapsack approach
-    auto computeBound = [&](int level, int weight, int profit) -> int {
-        if (weight >= capacity) return profit;
+    auto computeBound = [&](int level, int weight, int profit) -> int
+    {
+        if (weight >= capacity)
+            return profit;
 
         int bound = profit;
         int remainingWeight = capacity - weight;
 
         // Add fractional part of next item to the bound
-        for (int i = level; i < n; ++i) {
-            if (sortedItems[i].weight <= remainingWeight) {
+        for (int i = level; i < n; ++i)
+        {
+            if (sortedItems[i].weight <= remainingWeight)
+            {
                 remainingWeight -= sortedItems[i].weight;
                 bound += sortedItems[i].value;
-            } else {
+            }
+            else
+            {
                 bound += sortedItems[i].value * ((double)remainingWeight / sortedItems[i].weight);
                 break;
             }
@@ -52,22 +61,26 @@ int knapsackBranchBound(int capacity, const vector<Item>& items, int n) {
     vector<pair<int, int>> pq; // pair of (bound, level)
     pq.push_back({0, 0});
 
-    while (!pq.empty()) {
+    while (!pq.empty())
+    {
         int bound = pq.back().first;
         int level = pq.back().second;
         pq.pop_back();
 
         // If current bound is less than maxProfit, prune the subtree
-        if (bound <= maxProfit) continue;
+        if (bound <= maxProfit)
+            continue;
 
         // If we reached the end of the items list, update maxProfit if possible
-        if (level == n) {
+        if (level == n)
+        {
             maxProfit = max(maxProfit, currentProfit);
             continue;
         }
 
         // Consider the next level (left child) - item is included in knapsack
-        if (currentWeight + sortedItems[level].weight <= capacity) {
+        if (currentWeight + sortedItems[level].weight <= capacity)
+        {
             currentWeight += sortedItems[level].weight;
             currentProfit += sortedItems[level].value;
 
@@ -89,7 +102,8 @@ int knapsackBranchBound(int capacity, const vector<Item>& items, int n) {
 }
 
 // Example usage
-int main() {
+int main()
+{
     vector<Item> items = {{2, 40}, {3, 50}, {5, 100}, {7, 95}};
     int capacity = 10;
     int n = items.size();
